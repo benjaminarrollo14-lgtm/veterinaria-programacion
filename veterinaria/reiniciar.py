@@ -1,6 +1,6 @@
 """Deja la base en un estado conocido.
 
-Crea las tablas que falten y (re)carga un conjunto de datos iniciales
+Borra las tablas, las crea con 'create_all' y carga los datos iniciales
 determinista, por lo que ejecutar el script varias veces deja siempre la
 misma base.
 
@@ -17,7 +17,6 @@ import asyncio
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import delete
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -25,16 +24,6 @@ import app.models  # noqa: F401  (registra los modelos de tabla)
 from app.core.config import get_settings
 from app.core.database import crear_fabrica_sesiones, crear_motor
 from app.models import Duenio, FichaDuenio, Mascota, Practica, Turno, TurnoPractica
-
-
-async def _limpiar_datos(session: AsyncSession) -> None:
-    """Borra los datos en orden inverso a las dependencias de clave foránea."""
-    await session.execute(delete(TurnoPractica))
-    await session.execute(delete(Turno))
-    await session.execute(delete(Mascota))
-    await session.execute(delete(FichaDuenio))
-    await session.execute(delete(Practica))
-    await session.execute(delete(Duenio))
 
 
 async def _sembrar_datos(session: AsyncSession) -> None:
@@ -74,10 +63,12 @@ async def _sembrar_datos(session: AsyncSession) -> None:
     await session.flush()  # para que las prácticas tengan id
 
     # Un turno con dos prácticas (Consulta general + Vacuna).
+    # Total = 15000.00 + 25000.00 = 40000.00 (calculado por el servidor, RN-07).
     turno = Turno(
         fecha=datetime(2026, 11, 5, 10, 30, tzinfo=timezone.utc),
         motivo="Control anual",
         mascota_id=mascota_fido.id,
+        total=Decimal("40000.00"),
     )
     session.add(turno)
     await session.flush()  # asigna turno.id
@@ -106,9 +97,9 @@ async def main() -> None:
     engine = crear_motor(get_settings().database_url)
     try:
         async with engine.begin() as conn:
+            await conn.run_sync(SQLModel.metadata.drop_all)
             await conn.run_sync(SQLModel.metadata.create_all)
         async with crear_fabrica_sesiones(engine)() as session:
-            await _limpiar_datos(session)
             await _sembrar_datos(session)
     finally:
         await engine.dispose()

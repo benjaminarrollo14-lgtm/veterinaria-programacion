@@ -19,9 +19,20 @@ class TurnoPractica(SQLModel, table=True):
 
     __tablename__ = "turno_practica"
     turno_id: int = Field(foreign_key="turno.id", ondelete="CASCADE", primary_key=True)
-    practica_id: int = Field(foreign_key="practica.id", ondelete="RESTRICT", primary_key=True)
+    practica_id: int = Field(
+        foreign_key="practica.id",
+        ondelete="RESTRICT",
+        primary_key=True,
+        index=True,  # índice en practica_id (esquema obligatorio)
+    )
     # Precio copiado del catálogo al momento de crear el turno (RN-06).
     precio_unitario: Decimal = Field(max_digits=10, decimal_places=2)
+
+    __table_args__ = (
+        CheckConstraint(
+            "precio_unitario > 0", name="ck_turno_practica_precio_unitario_positivo"
+        ),
+    )
 
 
 class Practica(SQLModel, table=True):
