@@ -1,0 +1,127 @@
+@base = http://127.0.0.1:8000
+
+# Correr después de: python reiniciar.py  (base vacía; los ids empiezan en 1)
+
+### C-01 · Parámetro de ruta que no es entero
+# Esperado: 422, sin ejecutar el handler
+GET {{base}}/duenios/abc
+
+### Alta de dueño
+# Esperado: 201 con "ficha": null
+POST {{base}}/duenios/
+Content-Type: application/json
+
+{ "nombre": "Ana Pérez", "email": "ana@example.com" }
+
+### C-02 · Email de dueño repetido
+# Esperado: 409 "Ya existe un dueño con ese email."
+POST {{base}}/duenios/
+Content-Type: application/json
+
+{ "nombre": "Otra Ana", "email": "ana@example.com" }
+
+### Alta de dueño con email inválido
+# Esperado: 422
+POST {{base}}/duenios/
+Content-Type: application/json
+
+{ "nombre": "Sin Arroba", "email": "no-es-un-email" }
+
+### Leer un dueño
+# Esperado: 200 con su ficha (null si no tiene)
+GET {{base}}/duenios/1
+
+### Dueño inexistente
+# Esperado: 404
+GET {{base}}/duenios/999
+
+### PATCH parcial: sólo cambia el nombre, el email queda igual
+# Esperado: 200; email sigue siendo ana@example.com
+PATCH {{base}}/duenios/1
+Content-Type: application/json
+
+{ "nombre": "Ana María Pérez" }
+
+### PATCH con null explícito
+# Esperado: 422
+PATCH {{base}}/duenios/1
+Content-Type: application/json
+
+{ "nombre": null }
+
+### Ficha del dueño
+# Esperado: 201
+POST {{base}}/duenios/1/ficha
+Content-Type: application/json
+
+{ "telefono": "261-555-0101", "direccion": "San Martín 123" }
+
+### C-03 · Segunda ficha para el mismo dueño
+# Esperado: 409
+POST {{base}}/duenios/1/ficha
+Content-Type: application/json
+
+{ "telefono": "261-555-0202", "direccion": "Otra calle 456" }
+
+### C-04 (parte mascota) · Mascota con dueño inexistente
+# Esperado: 409
+POST {{base}}/mascotas/
+Content-Type: application/json
+
+{ "nombre": "Fantasma", "especie": "perro", "duenio_id": 999 }
+
+### Alta de mascota
+# Esperado: 201
+POST {{base}}/mascotas/
+Content-Type: application/json
+
+{ "nombre": "Toby", "especie": "perro", "duenio_id": 1 }
+
+### Mascotas del dueño
+# Esperado: 200 con la lista; 404 si el dueño no existe
+GET {{base}}/duenios/1/mascotas
+
+### Listado paginado (por defecto page=1, size=20)
+# Esperado: 200 { items, total, page, size, pages }
+GET {{base}}/mascotas/
+
+### Página más allá de `pages`
+# Esperado: 422
+GET {{base}}/mascotas/?page=99
+
+### size fuera de rango (1 a 100)
+# Esperado: 422
+GET {{base}}/mascotas/?size=101
+
+### Mascota con su dueño
+# Esperado: 200
+GET {{base}}/mascotas/1
+
+### C-05 (parte dueño) · Borrar un dueño con mascotas
+# Esperado: 409 (ON DELETE RESTRICT) y el dueño sigue existiendo
+DELETE {{base}}/duenios/1
+
+### Alta de práctica
+# Esperado: 201 con "precio": "15000.00"
+POST {{base}}/practicas/
+Content-Type: application/json
+
+{ "nombre": "Consulta", "precio": 15000 }
+
+### C-02 · Nombre de práctica repetido
+# Esperado: 409 con mensaje propio
+POST {{base}}/practicas/
+Content-Type: application/json
+
+{ "nombre": "Consulta", "precio": 100 }
+
+### Precio no positivo
+# Esperado: 422
+POST {{base}}/practicas/
+Content-Type: application/json
+
+{ "nombre": "Gratis", "precio": 0 }
+
+### Catálogo
+# Esperado: 200
+GET {{base}}/practicas/

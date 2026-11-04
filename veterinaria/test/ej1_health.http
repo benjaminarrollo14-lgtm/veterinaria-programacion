@@ -1,0 +1,9 @@
+@base = http://127.0.0.1:8000
+
+### Liveness: no toca la base
+# Esperado: 200 {"estado": "vivo"}
+GET {{base}}/health/live
+
+### Readiness: ejecuta SELECT 1
+# Esperado: 200 {"estado": "listo", "base": "ok"} (503 si la base no contesta)
+GET {{base}}/health/ready
