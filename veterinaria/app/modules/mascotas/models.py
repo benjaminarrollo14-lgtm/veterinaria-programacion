@@ -1,6 +1,11 @@
+from typing import TYPE_CHECKING
+
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.modules.duenios.models import Duenio
+
+if TYPE_CHECKING:
+    from app.modules.turnos.models import Turno
 
 
 class Mascota(SQLModel, table=True):
@@ -14,3 +19,4 @@ class Mascota(SQLModel, table=True):
     duenio_id: int = Field(foreign_key="duenio.id", ondelete="RESTRICT", index=True)
 
     duenio: Duenio = Relationship(back_populates="mascotas")
+    turnos: list["Turno"] = Relationship(back_populates="mascota")
