@@ -63,12 +63,6 @@ python reiniciar.py
 ### 5. Arrancar el servidor
 
 ```bash
-fastapi dev app/main.py
-```
-
-Alternativa:
-
-```bash
 uvicorn app.main:app --reload
 ```
 

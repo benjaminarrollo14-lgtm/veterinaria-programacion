@@ -1,4 +1,4 @@
-"""Deja la base en un estado conocido: borra las tablas y las crea de nuevo.
+"""Crea las tablas que falten sin borrar tablas ni datos existentes.
 
 Uso:  python reiniciar.py
 
@@ -18,11 +18,10 @@ async def main() -> None:
     engine = crear_motor(get_settings().database_url)
     try:
         async with engine.begin() as conn:
-            await conn.run_sync(SQLModel.metadata.drop_all)
             await conn.run_sync(SQLModel.metadata.create_all)
     finally:
         await engine.dispose()
-    print("Tablas recreadas.")
+    print("Tablas faltantes creadas (las tablas y datos existentes se conservaron).")
 
 
 if __name__ == "__main__":
