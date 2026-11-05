@@ -40,3 +40,9 @@ class Turno(SQLModel, table=True):
             "passive_deletes": True,
         },
     )
+
+    # Lado inverso de TurnoPractica.turno: permite selectinload del detalle.
+    turno_practicas: list["TurnoPractica"] = Relationship(
+        back_populates="turno",
+        sa_relationship_kwargs={"passive_deletes": True},
+    )

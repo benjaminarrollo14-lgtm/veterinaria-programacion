@@ -34,6 +34,13 @@ class TurnoPractica(SQLModel, table=True):
         ),
     )
 
+    # Relationship explícita a Practica: permite selectinload del detalle.
+    # En SQLModel, el type "Practica" va como string forward-ref.
+    # La cargamos como Relationship (no como columna) siguiendo el patrón del
+    # resto de modelos (ej: Mascota.duenio).
+    practica: "Practica" = Relationship(back_populates="turno_practicas")
+    turno: "Turno" = Relationship(back_populates="turno_practicas")
+
 
 class Practica(SQLModel, table=True):
     __tablename__ = "practica"
@@ -52,3 +59,12 @@ class Practica(SQLModel, table=True):
         link_model=TurnoPractica,
         sa_relationship_kwargs={"back_populates": "practicas"},
     )
+
+    # Lado inverso de TurnoPractica.practica (para selectinload del detalle).
+    turno_practicas: list["TurnoPractica"] = Relationship(
+        back_populates="practica",
+        sa_relationship_kwargs={"passive_deletes": True},
+    )
+
+    # Lado inverso de TurnoPractica.practica (para selectinload del detalle).
+    turno_practicas: list["TurnoPractica"] = Relationship(back_populates="practica")
