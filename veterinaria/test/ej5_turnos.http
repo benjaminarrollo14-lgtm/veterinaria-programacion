@@ -1,0 +1,110 @@
+@base = http://127.0.0.1:8000
+
+# Correr después de: python reiniciar.py
+# Estado inicial conocido: 2 dueños, 3 mascotas, 4 prácticas (ids 1..4), 1 turno (id 1 con prácticas 1 y 2).
+
+### C-04 (parte turno) · Turno con práctica inexistente
+# Esperado: 409 (del turno no queda guardado nada)
+POST {{base}}/turnos/
+Content-Type: application/json
+
+{
+  "mascota_id": 1,
+  "fecha": "2026-11-12T10:30:00-03:00",
+  "motivo": "Práctica fantasma",
+  "practicas": [
+    { "practica_id": 999 }
+  ]
+}
+
+### C-04 (variante mascota) · Turno con mascota inexistente
+# Esperado: 409
+POST {{base}}/turnos/
+Content-Type: application/json
+
+{
+  "mascota_id": 999,
+  "fecha": "2026-11-12T10:30:00-03:00",
+  "motivo": "Mascota inexistente",
+  "practicas": [
+    { "practica_id": 1 }
+  ]
+}
+
+### RN-07 · Práctica repetida en el mismo turno
+# Esperado: 409 "Una misma práctica no puede aparecer dos veces en un turno."
+POST {{base}}/turnos/
+Content-Type: application/json
+
+{
+  "mascota_id": 1,
+  "fecha": "2026-11-12T10:30:00-03:00",
+  "motivo": "Práctica repetida",
+  "practicas": [
+    { "practica_id": 1 },
+    { "practica_id": 1 }
+  ]
+}
+
+### RN-05 · Turno sin prácticas (lista vacía)
+# Esperado: 422
+POST {{base}}/turnos/
+Content-Type: application/json
+
+{
+  "mascota_id": 1,
+  "fecha": "2026-11-12T10:30:00-03:00",
+  "motivo": "Sin prácticas",
+  "practicas": []
+}
+
+### C-06 · Turno válido con dos prácticas
+# Esperado: 201 con total calculado (15000 + 12000 = 27000.00) y precios congelados
+POST {{base}}/turnos/
+Content-Type: application/json
+
+{
+  "mascota_id": 1,
+  "fecha": "2026-11-12T10:30:00-03:00",
+  "motivo": "Control y desparasitación",
+  "practicas": [
+    { "practica_id": 1 },
+    { "practica_id": 3 }
+  ]
+}
+
+### C-07 · Detalle de turno con 2 prácticas (id 1 sembrado por reiniciar.py)
+# Esperado: 200 con mascota y prácticas cargadas por joinedload + selectinload (3 consultas fijas)
+GET {{base}}/turnos/1
+
+### Alta de turno con 3 prácticas (para evidenciar C-07)
+# Esperado: 201 (id 3)
+POST {{base}}/turnos/
+Content-Type: application/json
+
+{
+  "mascota_id": 2,
+  "fecha": "2026-11-15T09:00:00-03:00",
+  "motivo": "Chequeo completo",
+  "practicas": [
+    { "practica_id": 1 },
+    { "practica_id": 2 },
+    { "practica_id": 3 }
+  ]
+}
+
+### C-07 · Detalle de turno con 3 prácticas (id 3 recién creado)
+# Esperado: 200 con exactamente la misma cantidad de consultas SQL en la consola (echo=True: 3 consultas)
+GET {{base}}/turnos/3
+
+### Detalle de turno inexistente
+# Esperado: 404
+GET {{base}}/turnos/999
+
+### C-05 (parte turno) · Borrar turno
+# Esperado: 204 (ON DELETE CASCADE borra sus filas en turno_practica en la base)
+DELETE {{base}}/turnos/1
+
+### Comprobación de borrado
+# Esperado: 404
+GET {{base}}/turnos/1

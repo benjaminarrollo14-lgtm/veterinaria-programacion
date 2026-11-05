@@ -4,42 +4,10 @@ from typing import TYPE_CHECKING
 from sqlalchemy import CheckConstraint, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.modules.turnos.models import TurnoPractica
+
 if TYPE_CHECKING:
     from app.modules.turnos.models import Turno
-
-
-class TurnoPractica(SQLModel, table=True):
-    """Tabla asociativa entre turnos y prácticas (relación muchos a muchos).
-
-    La clave foránea a turno lleva ON DELETE CASCADE: al borrar un turno, la
-    base borra automáticamente las filas de esta tabla. La relación
-    Turno.practicas se declara con passive_deletes=True para que el ORM no
-    intente vaciar ni borrar esas filas por su cuenta (sección 4.3).
-    """
-
-    __tablename__ = "turno_practica"
-    turno_id: int = Field(foreign_key="turno.id", ondelete="CASCADE", primary_key=True)
-    practica_id: int = Field(
-        foreign_key="practica.id",
-        ondelete="RESTRICT",
-        primary_key=True,
-        index=True,  # índice en practica_id (esquema obligatorio)
-    )
-    # Precio copiado del catálogo al momento de crear el turno (RN-06).
-    precio_unitario: Decimal = Field(max_digits=10, decimal_places=2)
-
-    __table_args__ = (
-        CheckConstraint(
-            "precio_unitario > 0", name="ck_turno_practica_precio_unitario_positivo"
-        ),
-    )
-
-    # Relationship explícita a Practica: permite selectinload del detalle.
-    # En SQLModel, el type "Practica" va como string forward-ref.
-    # La cargamos como Relationship (no como columna) siguiendo el patrón del
-    # resto de modelos (ej: Mascota.duenio).
-    practica: "Practica" = Relationship(back_populates="turno_practicas")
-    turno: "Turno" = Relationship(back_populates="turno_practicas")
 
 
 class Practica(SQLModel, table=True):
@@ -61,10 +29,7 @@ class Practica(SQLModel, table=True):
     )
 
     # Lado inverso de TurnoPractica.practica (para selectinload del detalle).
-    turno_practicas: list["TurnoPractica"] = Relationship(
+    turno_practicas: list[TurnoPractica] = Relationship(
         back_populates="practica",
         sa_relationship_kwargs={"passive_deletes": True},
     )
-
-    # Lado inverso de TurnoPractica.practica (para selectinload del detalle).
-    turno_practicas: list["TurnoPractica"] = Relationship(back_populates="practica")

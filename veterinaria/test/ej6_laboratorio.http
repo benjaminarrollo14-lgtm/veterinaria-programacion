@@ -1,0 +1,14 @@
+@base = http://127.0.0.1:8000
+
+### Consulta de stock al laboratorio (tarda ~1 segundo por time.sleep)
+# Esperado: 200 {"vacuna": "antirrabica", "stock": 21}  (10 + len("antirrabica") = 21)
+GET {{base}}/laboratorio/stock/antirrabica
+
+### Consulta de stock para otra vacuna
+# Esperado: 200 {"vacuna": "quintuple", "stock": 19}  (10 + len("quintuple") = 19)
+GET {{base}}/laboratorio/stock/quintuple
+
+### C-09 · Liveness inmediato mientras el laboratorio procesa
+# Disparar consultas a /laboratorio/stock/ y en simultáneo llamar a /health/live:
+# Esperado: 200 {"estado": "vivo"} de inmediato, demostrando que el bucle de eventos no se bloquea.
+GET {{base}}/health/live
